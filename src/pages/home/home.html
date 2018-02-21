@@ -1,14 +1,47 @@
 <ion-header>
-  <ion-navbar>
+  <ion-navbar color="primary">
     <ion-title>
-      Ionic Blank
+      Navigace
     </ion-title>
   </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  The world is your oyster.
+  
   <p>
-    If you get lost, the <a href="http://ionicframework.com/docs/v2">docs</a> will be your guide.
+    {{activeSegment.description}} {{activeSegment.action}}
   </p>
+
+  <button ion-button (click)="nextSegment()">Další úsek</button>
+  <button ion-button (click)="previousSegment()">Předchozí úsek</button>
+  <button ion-button (click)="startScan()">Skenovat</button>
+
+  <ion-list>
+
+    <ion-item *ngFor="let beacon of beaconsData">
+      <ion-grid>
+        <ion-row>
+          <ion-col>Major</ion-col>
+          <ion-col>{{beacon.major}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>Minor</ion-col>
+          <ion-col>{{beacon.minor}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>RSSI</ion-col>
+          <ion-col>{{beacon.rssi}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>Proximity</ion-col>
+          <ion-col>{{beacon.proximity}}</ion-col>
+        </ion-row>
+        <ion-row>
+          <ion-col>Accuracy</ion-col>
+          <ion-col>{{beacon.accuracy}}</ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-item>
+
+  </ion-list>
 </ion-content>
