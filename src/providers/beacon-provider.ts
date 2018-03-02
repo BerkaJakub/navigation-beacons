@@ -11,7 +11,7 @@ export class BeaconProvider {
   constructor(private ibeacon: IBeacon, public platform: Platform, public events: Events) {
   }
 
-  initialise(beacon): any {
+  initialise(): any {
     let promise = new Promise((resolve, reject) => {
       // we need to be running on a device 
       if (this.platform.is('cordova')) {
@@ -32,7 +32,7 @@ export class BeaconProvider {
           );
 
         // setup a beacon region
-        this.region = this.ibeacon.BeaconRegion(beacon.id, beacon.uuid, beacon.major, beacon.minor);
+        this.region = this.ibeacon.BeaconRegion("naviBeacon", "f7826da6-4fa2-4e98-8024-bc5b71e0893e");
         console.log(this.region);
         // start ranging
         this.ibeacon.startRangingBeaconsInRegion(this.region)

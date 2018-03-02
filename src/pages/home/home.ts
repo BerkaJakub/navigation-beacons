@@ -17,91 +17,181 @@ export class HomePage {
   beaconsData: BeaconModel[] = [];
   zone: any;
 
-  route: any;
   activeSegment: any;
   activeSegmentIndex: number;
   nextBeacon: object;
+  routeGraph: any;
+  routeBeacons: any;
+  actualDescription: string;
+  actualNode: any;
+  history: Array<any>;
+  errorBeacons: Array<any>;
+  didNotificate: boolean; // true if we notficated user already
+  isApproaching: boolean; //
+  rssiArray: Array<any>; // to store rssi values of ranged beacon
 
   constructor(private change: ChangeDetectorRef, private vibration: Vibration, private tts: TextToSpeech, private platform: Platform,
     public navCtrl: NavController, public beaconProvider: BeaconProvider, public events: Events) {
     this.zone = new NgZone({ enableLongStackTrace: false });
     // possible error if first segment has undefined endbeacon
 
-    this.route = {
-      routeDescription: "Trasa z adresy Karlovo náměstí 293/13  na adresu Karlovo náměstí 293/13 do učebny Ká 328 v budově E. Trasa je dlouhá asi 1000 metrů a vede přes 5 přechodů. Součástí trasy je cesta tramvají ze zastávky Jiráskovo náměstí na zastávku Myslíkova. Postav se tak, abys měl budovy za zády.",
-      segments: [
-        {
-          description: "Jsi ve vstupní hale budovy A, ČVUT.",
-          action: "Jdi rovně asi 5 metrů volným prostorem k turniketům před tebou.",
-          startBeacon: "4vXL",
-          endBeacon: "ODUM"
-
+    this.routeGraph = {
+      routeDescription: "Popis trasy.",
+      startNode: "a",
+      endNode: "d",
+      "adjacency": { //mapping each node identifier to an array of edge identifiers, each corresponds to an edge going out of the node.
+        "a": ["1"],
+        "b": ["2"],
+        "c": ["3", "4", "6"],
+        "d": [],
+        "e": ["5"],
+        "f": ["7"]
+      },
+      "nodes": {
+        "a": {
+          isOnRoute: true,
+          beaconID: undefined
         },
-        {
-          description: "Vstupní turnikety uprostřed vstupní haly. Čtečka karet je ve výšce pasu po levé ruce u každého z celkem 4 turniketů.",
-          action: "Projdi turnikety",
-          startBeacon: "ODUM",
-          endBeacon: undefined
+        "b": {
+          isOnRoute: true,
+          beaconID: undefined
         },
-        {
-          description: "Volný prostor asi 6 metrů dlouhý, po levé i pravé ruce schodiště nahoru. Poté dva sloupy vlevo i vpravo. Na konci prostoru jsou dřevěné dveře se skleněnou výplní, většinou otevřené.",
-          action: "Jdi rovně a projdi dveřmi.",
-          startBeacon: undefined,
-          endBeacon: "vf3i"
-
+        "c": {
+          isOnRoute: true,
+          beaconID: "4vXL"
         },
-        {
-          description: "Úzká rovná chodba asi 10 m dlouhá, před koncem chodby většinou otevřené dvojkřídlé skleněné dveře s madlem.",
-          action: "Jdi chodbou ke dveřím a projdi.",
-          startBeacon: "vf3i",
-          endBeacon: "y4rk"
-
+        "d": {
+          isOnRoute: true,
+          beaconID: "ODUM"
+        },
+        "e": {
+          isOnRoute: false,
+          isEndNode: false,
+          beaconID: "vf3i"
+        },
+        "f": {
+          isOnRoute: false,
+          beaconID: "y4rk"
         }
-      ],
-      routeBeacons: [
-        { id: "4vXL", uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 200 },
-        { id: "ODUM", uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 100 },
-        { id: "vf3i", uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 300 },
-        { id: "y4rk", uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 400 }
-      ]
+      },
+      "edges": {
+        "1": {
+          "from": "a", "to": "b",
+          isOnRoute: true,
+          "data": {
+            description: "Plošina asi 5 metrů dlouhá. Povrch gumová rohož. Na konci plošiny je přímé schodiště nahoru.",
+            action: "Dojdi ke schodišti na konec plošiny."
+          }
+        },
+        "2": {
+          "from": "b", "to": "c",
+          isOnRoute: true,
+          "data": {
+            description: "Přímé kamenné schodiště. Hned nad schodištěm jsou dřevěné lítačky.",
+            action: "Vyjdi nahoru a projdi dveřmi. Pozor plošina nad schodištěm je velmi krátká."
+          }
+        },
+        "3": {
+          "from": "c", "to": "d",
+          isOnRoute: true,
+          "data": {
+            description: "Plošina hlavního schodiště v přízemí. Povrch dlaždice. Před tebou jsou schody nahoru. Vlevo jsou dřevěné dveře se skleněnou výplní.",
+            action: "Otoč se vlevo a dojdi ke dveřím. Pozor, vpravo i vlevo od schodiště nahoru jsou schody dolů."
+          }
+        },
+        "4": {
+          "from": "e", "to": "c",
+          isOnRoute: false,
+          "data": {
+            description: "",
+            action: ""
+          }
+        },
+        "5": {
+          "from": "f", "to": "c",
+          isOnRoute: false,
+          "data": {
+            description: "Sešel jsi z trasy.",
+            action: "Vrať se na předchozí úsek."
+          }
+        },
+        "6": {
+          "from": "e", "to": "c",
+          isOnRoute: false,
+          "data": {
+            description: "",
+            action: ""
+          }
+        },
+        "7": {
+          "from": "f", "to": "c",
+          isOnRoute: false,
+          "data": {
+            description: "Sešel jsi z trasy.",
+            action: "Vrať se na předchozí úsek."
+          }
+        }
+      }
+
     }
 
-    this.activeSegmentIndex = 0;
-    this.activeSegment = this.route.segments[this.activeSegmentIndex];
-    this.setNextBeacon();
-    this.startScan(this.nextBeacon);
-  }
 
-  // refactor
-  setNextBeacon() {
-    var nextBeaconId = this.route.segments[this.activeSegmentIndex].endBeacon;
-    this.nextBeacon = this.route.routeBeacons.filter(function (beacon) { return beacon.id == nextBeaconId })[0];
+    this.routeBeacons = {
+      "4vXL": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 200 },
+      "ODUM": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 100 },
+      "vf3i": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 300 },
+      "y4rk": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 400 }
+    }
+
+    this.actualNode = this.routeGraph.startNode;
+    this.actualDescription = this.routeGraph.routeDescription;
+    this.history = [];
+    this.errorBeacons = [];
+    this.didNotificate = false;
+
   }
 
   nextSegment() {
-    if (this.activeSegmentIndex < this.route.segments.length - 1) {
-      this.activeSegmentIndex++;
+    this.rssiArray = [];
+    this.didNotificate = false;
+    var outEdges = this.routeGraph.adjacency[this.actualNode];
+    if (outEdges.length > 0) { // if we are not in final segment, i.e. no edges go out from node
+      this.history.push({ node: this.actualNode, description: this.actualDescription });
     }
-    this.activeSegment = this.route.segments[this.activeSegmentIndex];
-    this.setNextBeacon();
-    this.startScan(this.nextBeacon);
+    this.errorBeacons = [];
+    outEdges.forEach(edgeID => {
+      var edge = this.routeGraph.edges[edgeID];
+      if (this.routeGraph.nodes[edge.to].beaconID != undefined) {
+        var ID = this.routeGraph.nodes[edge.to].beaconID;
+        this.errorBeacons.push(this.routeBeacons[ID]);
+      }
+      if (edge.isOnRoute) {
+        this.actualDescription = edge.data.description + edge.data.action;
+        this.actualNode = edge.to;
+
+      }
+    });
   }
 
 
   previousSegment() {
-    if (this.activeSegmentIndex > 0) {
-      this.activeSegmentIndex--;
-    }
-    this.activeSegment = this.route.segments[this.activeSegmentIndex];
-    this.setNextBeacon();
-    this.startScan(this.nextBeacon);
+    this.rssiArray = [];
+    this.didNotificate = false;
+    var previous = this.history.pop();
+    this.actualNode = previous.node;
+    this.actualDescription = previous.description;
+
   }
 
-  startScan(beacon) {
+  ionViewDidLoad() {
+    this.startScan();
+  }
+
+  startScan() {
     this.platform.ready().then(() => {
-      this.beaconProvider.initialise(beacon).then((isInitialised) => {
+      this.beaconProvider.initialise().then((isInitialised) => {
         if (isInitialised) {
-          this.listenToBeaconEvents();
+          this.events.subscribe('didRangeBeaconsInRegion', this.filterBeaconsHandler);
 
         }
       });
@@ -109,34 +199,62 @@ export class HomePage {
 
   }
 
+  filterBeaconsHandler: any = (data) => {
 
+    this.beaconsData = data.beacons;
+    console.log(this.beaconsData);
+    var filtered = data.beacons.filter((beacon) => {
+      var actualID = this.routeGraph.nodes[this.actualNode].beaconID;
+      //console.log(this.actualNode, actualID);
+      if (this.routeBeacons[actualID] != undefined) {
+        //console.log(this.routeBeacons[actualID]);
+        return beacon.minor == this.routeBeacons[actualID].minor;
+      } else {
+        return false;
+      }
 
-  listenToBeaconEvents() {
-    this.events.subscribe('didEnterRegion', (data) => {
-      console.log(data);
-      this.zone.run(() => {
-        this.beaconsData = data.beacons;
-
-        this.beaconsData.forEach((beacon) => {
-          console.log(beacon);
-          if (beacon.proximity == "ProximityImmediate") {
-            var ttsOptions = {
-              text: "Jsi blízko",
-              locale: "cs-CZ"
-            }
-            this.tts.speak(ttsOptions)
-              .then(() => console.log('Success'))
-              .catch((reason: any) => console.log(reason));
-            this.vibration.vibrate(100);
-          }
-
-        });
-
-      });
 
     });
 
+    //console.log("filtered ", filtered);
+    if(!this.didNotificate){
+    this.checkFilteredBeacons(filtered);
+    }
+
+
   }
 
+  checkFilteredBeacons(filtered) {
+    filtered.forEach(beacon => {
+      this.rssiArray.push(beacon.rssi);
+      //console.log(this.getRange(beacon.tx, beacon.rssi));
+      //console.log(this.rssiArray);
+      if (this.rssiArray.length == 3) {
+        var sum = this.rssiArray.reduce((a, b) => { return a + b; })
+        var rssiAvg = sum / this.rssiArray.length;
+        this.rssiArray = [];
+        if (rssiAvg > - 82) {
+          var ttsOptions = {
+            text: "Jsi blízko majáčku " + beacon.minor,
+            locale: "cs-CZ"
+          }
+          this.tts.speak(ttsOptions)
+            .then(() => console.log('Success'))
+            .catch((reason: any) => console.log(reason));
+          this.vibration.vibrate([30, 40, 50]);
+          this.didNotificate = true;
+        }
+      }
+    });
+  }
+
+  getRange(txCalibratedPower, rssi) {
+    var ratio_db = txCalibratedPower - rssi;
+    var ratio_linear = Math.pow(10, ratio_db / 10);
+
+    var r = Math.sqrt(ratio_linear);
+    return r;
+  }
 
 }
+

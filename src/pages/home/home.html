@@ -9,10 +9,12 @@
 <ion-content padding>
   
   <p>
-    {{activeSegment.description}} {{activeSegment.action}}
+    {{actualDescription}}
   </p>
+  
+  <p>NodeTo: {{actualNode}}</p>
 
-  <button ion-button (click)="nextSegment()">Další úsek</button>
+  <button ion-button (click)="nextSegment()">Další úsek</button><br>
   <button ion-button (click)="previousSegment()">Předchozí úsek</button>
 
   <ion-list>
