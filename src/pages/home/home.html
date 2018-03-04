@@ -1,48 +1,14 @@
-<ion-header>
-  <ion-navbar color="primary">
-    <ion-title>
-      Navigace
-    </ion-title>
-  </ion-navbar>
-</ion-header>
 
 <ion-content padding>
   
-  <p>
-    {{actualDescription}}
+  <p class="description">
+    {{state.actualDescription}}
   </p>
   
-  <p>NodeTo: {{actualNode}}</p>
+  <p >NodeTo: {{state.actualNode}}</p>
 
-  <button ion-button (click)="nextSegment()">Další úsek</button><br>
-  <button ion-button (click)="previousSegment()">Předchozí úsek</button>
+  <button *ngIf="state.showNext" ion-button (click)="nextSegment()">Další úsek</button><br>
+  <button *ngIf="state.showPrev" ion-button (click)="previousSegment()">Předchozí úsek</button>
 
-  <ion-list>
-
-    <ion-item *ngFor="let beacon of beaconsData">
-      <ion-grid>
-        <ion-row>
-          <ion-col>Major</ion-col>
-          <ion-col>{{beacon.major}}</ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col>Minor</ion-col>
-          <ion-col>{{beacon.minor}}</ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col>RSSI</ion-col>
-          <ion-col>{{beacon.rssi}}</ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col>Proximity</ion-col>
-          <ion-col>{{beacon.proximity}}</ion-col>
-        </ion-row>
-        <ion-row>
-          <ion-col>Accuracy</ion-col>
-          <ion-col>{{beacon.accuracy}}</ion-col>
-        </ion-row>
-      </ion-grid>
-    </ion-item>
-
-  </ion-list>
+  
 </ion-content>

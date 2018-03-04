@@ -5,17 +5,23 @@ import { SplashScreen } from '@ionic-native/splash-screen';
 import { StatusBar } from '@ionic-native/status-bar';
 import { Vibration } from '@ionic-native/vibration';
 import { IBeacon } from '@ionic-native/ibeacon';
-import { BeaconProvider } from '../providers/beacon-provider';
+
 import { TextToSpeech } from '@ionic-native/text-to-speech';
+import { MobileAccessibility } from '@ionic-native/mobile-accessibility';
 
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
+import { NextSegmentPage } from '../pages/next-segment/next-segment';
+
+import { BeaconProvider } from '../providers/beacon-provider';
+import { RouteProvider } from '../providers/route-provider';
 
 @NgModule({
   declarations: [
     MyApp,
-    HomePage
+    HomePage,
+    NextSegmentPage
   ],
   imports: [
     BrowserModule,
@@ -24,7 +30,8 @@ import { HomePage } from '../pages/home/home';
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HomePage
+    HomePage,
+    NextSegmentPage
   ],
   providers: [
     StatusBar,
@@ -33,7 +40,9 @@ import { HomePage } from '../pages/home/home';
     Vibration,
     IBeacon, 
     BeaconProvider,
-    TextToSpeech
+    RouteProvider,
+    TextToSpeech,
+    MobileAccessibility 
   ]
 })
 export class AppModule {}
