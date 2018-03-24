@@ -20,6 +20,7 @@ export class RouteProvider {
     nextBeacon: object;
     actualDescription: string;
     actualNode: any;
+    actualID: string;
     history: Array<any>;
     errorBeacons: Array<any>;
     didNotificate: boolean; // true if we notficated user already
@@ -32,7 +33,7 @@ export class RouteProvider {
 
     constructor(public beaconProvider: BeaconProvider, public events: Events, public mobileAccessibility: MobileAccessibility, private platform: Platform, private vibration: Vibration, private tts: TextToSpeech, ) {
         this.routeGraph = {
-            routeDescription: "Trasa z bodu A do bodu B, dlouhá asi 100 metrů.",
+            routeDescription: "Trasa z adresy Karlovo náměstí 557/30 na adresu Karlovo náměstí 293/13 do místnosti 317 v budově E areálu ČVUT. Trasa je asi 700 metrů dlouhá a vede přes 3 přechody. Součástí trasy je jízda tramvají ze zastávky Štěpánská na zastávku Novoměstská radnice. Postav se tak, ať máš budovy za zády.",
             startNode: "a",
             endNode: "d",
             "adjacency": { //mapping each node identifier to an array of edge identifiers, each corresponds to an edge going out of the node.
@@ -99,7 +100,7 @@ export class RouteProvider {
                     }
                 },
                 "4": {
-                    "from": "e", "to": "c",
+                    "from": "c", "to": "e",
                     isOnRoute: false,
                     "data": {
                         description: "",
@@ -115,7 +116,7 @@ export class RouteProvider {
                     }
                 },
                 "6": {
-                    "from": "e", "to": "c",
+                    "from": "c", "to": "f",
                     isOnRoute: false,
                     "data": {
                         description: "",
@@ -135,12 +136,11 @@ export class RouteProvider {
         }
 
         this.routeBeacons = {
-            "4vXL": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 200 },
-            "ODUM": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 100 },
-            "vf3i": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 300 },
-            "y4rk": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 400 }
+            "4vXL": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 200, rssiTrigger: -80, rssiArray: [] },
+            "ODUM": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 100, rssiTrigger: -80, rssiArray: [] },
+            "vf3i": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 300, rssiTrigger: -80, rssiArray: [] },
+            "y4rk": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 1000, minor: 400, rssiTrigger: -80, rssiArray: [] }
         }
-
         this.actualNode = this.routeGraph.startNode;
         this.actualDescription = this.routeGraph.routeDescription;
         this.history = [];
@@ -173,38 +173,35 @@ export class RouteProvider {
         this.didNotificate = false;
         var outEdges = this.routeGraph.adjacency[this.actualNode];
         if (outEdges.length > 0) { // if we are not in final segment, i.e. no edges go out from node
-            this.history.push({ node: this.actualNode, description: this.actualDescription, segmentNumber: this.segmentNumber });
+            this.history.push({ node: this.actualNode, description: this.actualDescription, segmentNumber: this.segmentNumber, errorBeacons: this.errorBeacons, actualID: this.actualID });
         }
         this.errorBeacons = [];
+
         outEdges.forEach(edgeID => {
             var edge = this.routeGraph.edges[edgeID];
-            if (this.routeGraph.nodes[edge.to].beaconID != undefined) {
-                var ID = this.routeGraph.nodes[edge.to].beaconID;
-                this.errorBeacons.push(this.routeBeacons[ID]);
-            }
+
             if (edge.isOnRoute) {
                 this.actualDescription = edge.data.description + edge.data.action;
                 this.actualNode = edge.to;
                 this.segmentNumber = edge.data.segmentNumber;
-                this.mobileAccessibility.isScreenReaderRunning().then((isRunning) => {
-                    if (isRunning) {
-                        console.log("TalkBack Is Running");
+                this.actualID = this.routeGraph.nodes[this.actualNode].beaconID;
 
-                    }
-                });
-
+            } else { // error edge
+                var ID = this.routeGraph.nodes[edge.to].beaconID;
+                this.errorBeacons.push(this.routeBeacons[ID]);
             }
         });
-        if (this.actualNode == this.routeGraph.endNode) {
+        if (this.actualNode == this.routeGraph.endNode) { // end of the route, dont show next segment button
             this.showNext = false;
         }
 
-        return {
+        return { // return state
             actualDescription: this.actualDescription,
             actualNode: this.actualNode,
             segmentNumber: this.segmentNumber,
             showNext: this.showNext,
-            showPrev: this.showPrev
+            showPrev: this.showPrev,
+
         }
 
     }
@@ -215,13 +212,15 @@ export class RouteProvider {
         var previous = this.history.pop();
         this.actualNode = previous.node;
         this.actualDescription = previous.description;
-        this.segmentNumber = previous.segmentNumber;    
+        this.segmentNumber = previous.segmentNumber;
+        this.errorBeacons = previous.errorBeacons;
+        this.actualID = previous.actualID;
         this.showNext = true;
-        if (this.actualNode == this.routeGraph.startNode) {
+        if (this.actualNode == this.routeGraph.startNode) { // start of the route, dont show previous segment button
             this.showPrev = false;
         }
 
-        return {
+        return { // return state
             actualDescription: this.actualDescription,
             actualNode: this.actualNode,
             segmentNumber: this.segmentNumber,
@@ -238,7 +237,6 @@ export class RouteProvider {
                     this.events.subscribe('didRangeBeaconsInRegion', this.filterBeaconsHandler);
                     this.isScanning = true;
 
-
                 }
             });
         });
@@ -247,56 +245,72 @@ export class RouteProvider {
 
     filterBeaconsHandler: any = (data) => {
         this.beaconsData = data.beacons;
-        console.log("beaconsData", this.beaconsData);
-        var filtered = data.beacons.filter((beacon) => {
-            var actualID = this.routeGraph.nodes[this.actualNode].beaconID;
-            console.log(this.actualNode, actualID);
-            if (this.routeBeacons[actualID] != undefined) {
-                console.log(this.routeBeacons[actualID]);
-                return beacon.minor == this.routeBeacons[actualID].minor;
-            } else {
-                return false;
+        // console.log("beaconsData", this.beaconsData);
+        data.beacons.map((beacon) => {
+            if (this.routeBeacons[this.actualID] != undefined) {
+                //console.log(this.routeBeacons[actualID]);
+                if (beacon.minor == this.routeBeacons[this.actualID].minor &&
+                    beacon.major == this.routeBeacons[this.actualID].major) {
+                    this.routeBeacons[this.actualID].rssiArray.push(beacon.rssi);
+                }
             }
         });
-        console.log("filtered ", filtered);
+
+        this.filterErrorBeacons(data.beacons);
+        this.checkErrorBeacons();
         if (!this.didNotificate) {
-            this.checkFilteredBeacons(filtered);
+            if(this.routeBeacons[this.actualID] != undefined){
+                this.checkCorrectBeacon();
+            }
+            
         }
 
 
     }
 
-    checkFilteredBeacons(filtered) {
-        filtered.forEach(beacon => {
-            this.rssiArray.push(beacon.rssi);
-            //console.log(this.getRange(beacon.tx, beacon.rssi));
-            console.log(this.rssiArray);
-            if (this.rssiArray.length == 3) {
-                var sum = this.rssiArray.reduce((a, b) => { return a + b; })
-                var rssiAvg = sum / this.rssiArray.length;
-                this.rssiArray = [];
-                if (rssiAvg > - 82) {
-                    this.mobileAccessibility.speak("Jsi blízko majáčku" + beacon.minor, 1);
-                    this.vibration.vibrate([30, 40, 50]);
-                    this.didNotificate = true;
+    filterErrorBeacons(beacons) {
+
+        beacons.map((beacon) => {
+            for (let index = 0; index < this.errorBeacons.length; index++) {
+                if (beacon.minor == this.errorBeacons[index].minor && beacon.major == this.errorBeacons[index].major) {
+                    this.errorBeacons[index].rssiArray.push(beacon.rssi);
+                    console.log(beacon.major, beacon.minor, beacon.rssi);
+
                 }
             }
         });
     }
 
-    getRange(txCalibratedPower, rssi) {
-        var ratio_db = txCalibratedPower - rssi;
-        var ratio_linear = Math.pow(10, ratio_db / 10);
+    checkErrorBeacons() {
+        this.errorBeacons.forEach(beacon => {
+            if (beacon.rssiArray.length == 3) {
+                beacon.rssiArray.sort((a, b) => a - b);
+                let median = beacon.rssiArray[1];
+                if (median > beacon.rssiTrigger) {
+                    console.log(median, " > ", beacon.rssiTrigger);
+                    this.vibration.vibrate([100, 100, 100]);
+                    this.mobileAccessibility.speak("Jsi na špatné cestě, vrať se zpět na začátek úseku", 20);
 
-        var r = Math.sqrt(ratio_linear);
-        return r;
+                }
+                beacon.rssiArray = [];
+            }
+        });
     }
 
+    checkCorrectBeacon() {
+        let beacon = this.routeBeacons[this.actualID];
+        if (beacon.rssiArray.length == 3) {
+            beacon.rssiArray.sort((a, b) => a - b);
+            let median = beacon.rssiArray[1];
+            if (median > beacon.rssiTrigger) {
+                console.log(median, " > ", beacon.rssiTrigger);
+                this.vibration.vibrate([100, 100, 100]);
+                this.mobileAccessibility.speak("Jsi blízko konce tohoto úseku", 10);
+                this.didNotificate = true;
+            }
+            this.routeBeacons[this.actualID].rssiArray = [];
+        }
 
-
-
-
-
-
+    }
 
 }

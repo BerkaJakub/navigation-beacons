@@ -33,7 +33,7 @@ export class BeaconProvider {
 
         // setup a beacon region
         this.region = this.ibeacon.BeaconRegion("naviBeacon", "f7826da6-4fa2-4e98-8024-bc5b71e0893e");
-        console.log(this.region);
+        //console.log(this.region);
         // start ranging
         this.ibeacon.startRangingBeaconsInRegion(this.region)
           .then(
