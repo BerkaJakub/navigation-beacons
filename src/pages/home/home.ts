@@ -3,13 +3,9 @@ import { NavController, Platform, Events, NavParams } from 'ionic-angular';
 import { NgZone } from "@angular/core";
 
 
-import { MobileAccessibility } from '@ionic-native/mobile-accessibility';
-
 import { BeaconProvider } from '../../providers/beacon-provider';
 import { RouteProvider } from '../../providers/route-provider';
 
-import { BeaconModel } from '../../models/beacon-model';
-import { NextSegmentPage } from '../next-segment/next-segment';
 
 @Component({
   selector: 'page-home',
@@ -22,7 +18,7 @@ export class HomePage {
 
 
   constructor(private change: ChangeDetectorRef, private platform: Platform,  public navParams: NavParams,
-    public navCtrl: NavController, public routeProvider: RouteProvider, public events: Events, private mobileAccessibility: MobileAccessibility) {
+    public navCtrl: NavController, public routeProvider: RouteProvider, public events: Events) {
     this.zone = new NgZone({ enableLongStackTrace: false });
     if(navParams.get("state") != undefined){
       this.state = navParams.get("state");
