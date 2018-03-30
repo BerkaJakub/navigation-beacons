@@ -67,11 +67,11 @@ export class RouteProvider {
                 "aa": ["29", "30", "31", "32"],
                 "ab": ["33","34"],
                 "ac": ["35", "36", "37"],
-                "ad": ["38"],
+                "ad": ["38", "54", "55"],
                 "ae": ["39", "40"],
                 "af": ["41"],
                 "ag": ["42", "43"],
-                "ah": ["44", "45"],
+                "ah": ["44", "45", "53"],
                 "ai": ["46", "52", "47"],
                 "aj": ["48"],
                 "ak": ["49"],
@@ -613,7 +613,7 @@ export class RouteProvider {
                     isOnRoute: true,
                     "data": {
                         segmentNumber: "5. úsek z 15",
-                        description: "Plošina schodišťové haly v prvním patře. Vlevo jsou dvoukřídlé dveře, vetšinou otevřené.",
+                        description: "Plošina schodišťové haly v prvním patře. Vlevo jsou dvoukřídlé dveře, většinou otevřené.",
                         action: "Otoč se doleva a projdi dveřmi."
                     }
                 },
@@ -751,6 +751,33 @@ export class RouteProvider {
                         description: "",
                         action: ""
                     }
+                },
+                "53": {
+                    "from": "ah", "to": "eaj1",
+                    isOnRoute: false,
+                    "data": {
+                        segmentNumber: "",
+                        description: "",
+                        action: ""
+                    }
+                },
+                "54": {
+                    "from": "ad", "to": "ead1",
+                    isOnRoute: false,
+                    "data": {
+                        segmentNumber: "",
+                        description: "",
+                        action: ""
+                    }
+                },
+                "55": {
+                    "from": "ad", "to": "ead2",
+                    isOnRoute: false,
+                    "data": {
+                        segmentNumber: "",
+                        description: "",
+                        action: ""
+                    }
                 }
 
             }
@@ -765,8 +792,8 @@ export class RouteProvider {
             "Lto1": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 48587, minor: 51204, rssiTrigger: -80, rssiArray: [] },
             "m46J": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 46864, minor: 40873, rssiTrigger: -80, rssiArray: [] },
             "2LxK": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 36798, minor: 31395, rssiTrigger: -90, rssiArray: [] },
-            "ulWB": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 12943, minor: 40394, rssiTrigger: -80, rssiArray: [] },
-            "BGNA": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 38913, minor: 52322, rssiTrigger: -80, rssiArray: [] },
+            "ulWB": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 12943, minor: 40394, rssiTrigger: -85, rssiArray: [] },
+            "BGNA": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 38913, minor: 52322, rssiTrigger: -85, rssiArray: [] },
             "S8Nn": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 53001, minor: 10385, rssiTrigger: -80, rssiArray: [] },
             "xTni": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 680, minor: 24994, rssiTrigger: -80, rssiArray: [] },
             "dwR7": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 32536, minor: 58292, rssiTrigger: -80, rssiArray: [] },
@@ -784,7 +811,7 @@ export class RouteProvider {
             "ajes": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 16124, minor: 19363, rssiTrigger: -80, rssiArray: [] },
             "uTlg": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 33340, minor: 34828, rssiTrigger: -85, rssiArray: [] },
             "gwIq": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 999, minor: 100, rssiTrigger: -80, rssiArray: [] },
-            "6ezy": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 51439, minor: 40631, rssiTrigger: -80, rssiArray: [] },
+            "6eZY": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 51439, minor: 40631, rssiTrigger: -80, rssiArray: [] },
             "1Ydz": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 59862, minor: 25684, rssiTrigger: -80, rssiArray: [] }
         }
         this.actualNode = this.routeGraph.startNode;
@@ -829,7 +856,7 @@ export class RouteProvider {
             var edge = this.routeGraph.edges[edgeID];
             console.log(edge);
             if (edge.isOnRoute) {
-                this.actualDescription = edge.data.description + edge.data.action;
+                this.actualDescription = edge.data.description + " " + edge.data.action;
                 this.actualNode = edge.to;
                 this.segmentNumber = edge.data.segmentNumber;
                 this.actualID = this.routeGraph.nodes[this.actualNode].beaconID;
