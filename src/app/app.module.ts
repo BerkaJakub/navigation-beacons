@@ -8,7 +8,7 @@ import { IBeacon } from '@ionic-native/ibeacon';
 
 import { TextToSpeech } from '@ionic-native/text-to-speech';
 import { MobileAccessibility } from '@ionic-native/mobile-accessibility';
-
+import { File } from '@ionic-native/file';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
@@ -16,6 +16,8 @@ import { NextSegmentPage } from '../pages/next-segment/next-segment';
 
 import { BeaconProvider } from '../providers/beacon-provider';
 import { RouteProvider } from '../providers/route-provider';
+import { LoggerProvider } from '../providers/logger-provider';
+
 
 @NgModule({
   declarations: [
@@ -42,7 +44,9 @@ import { RouteProvider } from '../providers/route-provider';
     BeaconProvider,
     RouteProvider,
     TextToSpeech,
-    MobileAccessibility 
+    MobileAccessibility,
+    File,
+    LoggerProvider
   ]
 })
 export class AppModule {}

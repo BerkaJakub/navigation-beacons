@@ -8,6 +8,8 @@ import { Vibration } from '@ionic-native/vibration';
 import { TextToSpeech } from '@ionic-native/text-to-speech';
 import { MobileAccessibility } from '@ionic-native/mobile-accessibility';
 
+import { LoggerProvider } from '../providers/logger-provider';
+
 @Injectable()
 export class RouteProvider {
     beaconsData: BeaconModel[] = [];
@@ -31,8 +33,9 @@ export class RouteProvider {
     showPrev: boolean;
     isScanning: boolean;
     segmentNumber: string;
+    fileName: string;
 
-    constructor(public beaconProvider: BeaconProvider, public events: Events, public mobileAccessibility: MobileAccessibility, private platform: Platform, private vibration: Vibration, private tts: TextToSpeech, ) {
+    constructor(public beaconProvider: BeaconProvider, public logger: LoggerProvider,  public events: Events, public mobileAccessibility: MobileAccessibility, private platform: Platform, private vibration: Vibration, private tts: TextToSpeech, ) {
         this.routeGraph = {
             routeDescription: "Trasa z adresy Karlovo náměstí 557/30 na adresu Karlovo náměstí 293/13 do místnosti 317 v budově E areálu ČVUT. Trasa je asi 700 metrů dlouhá a vede přes 3 přechody. Součástí trasy je jízda tramvají ze zastávky Štěpánská na zastávku Novoměstská radnice. Postav se tak, ať máš budovy za zády.",
             startNode: "a",
@@ -65,7 +68,7 @@ export class RouteProvider {
                 "y": ["27"],
                 "z": ["28"],
                 "aa": ["29", "30", "31", "32"],
-                "ab": ["33","34"],
+                "ab": ["33", "34"],
                 "ac": ["35", "36", "37"],
                 "ad": ["38", "54", "55"],
                 "ae": ["39", "40"],
@@ -722,7 +725,7 @@ export class RouteProvider {
                     "data": {
                         segmentNumber: "13.úsek z 15",
                         description: "Jsi u zalomení chodby doleva. Vlevo jsou dveře většinou otevřené a následuje chodba. Po levé straně jsou dveře do učeben a výklenek.",
-                        action: "Otoč se doleva a jdi asi 8 metrů ke dveřím většinou otevřeným."
+                        action: "Otoč se doleva a jdi asi 8 metrů ke dveřím většinou otevřeným a výklenku."
                     }
                 },
                 "50": {
@@ -730,7 +733,7 @@ export class RouteProvider {
                     isOnRoute: true,
                     "data": {
                         segmentNumber: "14.úsek z 15",
-                        description: "Dřevěné dvoukřídlé dveře, většinou otevřené. Následuje chodba asi 7 metrů dlouhá. Vlevo jsou dveře do místností.",
+                        description: "Dřevěné dvoukřídlé dveře většinou otevřené, následuje chodba asi 7 metrů dlouhá. Vlevo jsou dveře do místností.",
                         action: "Projdi dveřmi a odpočítej první dveře po levé ruce."
                     }
                 },
@@ -800,7 +803,7 @@ export class RouteProvider {
             "2Y5M": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 2000, minor: 201, rssiTrigger: -80, rssiArray: [] },
             "yODr": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 5719, minor: 48569, rssiTrigger: -80, rssiArray: [] },
             "y4Wl": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 2000, minor: 202, rssiTrigger: -80, rssiArray: [] },
-            "bz7E": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 17116, minor: 60729, rssiTrigger: -80, rssiArray: [] },
+            "bz7E": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 17116, minor: 60729, rssiTrigger: -75, rssiArray: [] },
 
             "kDaJ": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 26530, minor: 43364, rssiTrigger: -85, rssiArray: [] },
             "U6ne": { uuid: "f7826da6-4fa2-4e98-8024-bc5b71e0893e", major: 36926, minor: 26828, rssiTrigger: -85, rssiArray: [] },
@@ -828,7 +831,12 @@ export class RouteProvider {
     }
 
     getInitState() {
-        console.log("getInitState")
+        console.log("getInitState");
+
+        this.fileName = "log" + new Date().toJSON().slice(0, 10) + new Date().toJSON().slice(11, 13) + "-" + new Date().toJSON().slice(14, 16) + ".txt";
+        
+        this.logger.createFile(this.fileName);
+        
         return {
             actualNode: this.routeGraph.startNode,
             actualDescription: this.routeGraph.routeDescription,
@@ -841,6 +849,7 @@ export class RouteProvider {
 
 
     nextSegment() {
+        //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "nextSegment\n", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
         this.showNext = true;
         this.showPrev = true;
         this.rssiArray = [];
@@ -854,20 +863,24 @@ export class RouteProvider {
 
         outEdges.forEach(edgeID => {
             var edge = this.routeGraph.edges[edgeID];
-            console.log(edge);
+            //console.log(edge);
             if (edge.isOnRoute) {
                 this.actualDescription = edge.data.description + " " + edge.data.action;
                 this.actualNode = edge.to;
                 this.segmentNumber = edge.data.segmentNumber;
                 this.actualID = this.routeGraph.nodes[this.actualNode].beaconID;
-                console.log(this.actualID);
-
+                //console.log(this.actualID);
+                this.logger.log(`Next Segment ${this.segmentNumber}, beacon: ${this.actualID}`, this.fileName);
             } else { // error edge
                 var ID = this.routeGraph.nodes[edge.to].beaconID;
                 this.errorBeacons.push(this.routeBeacons[ID]);
+                this.logger.log(`error beacon: ${ID}`, this.fileName);
             }
         });
+
         if (this.actualNode == this.routeGraph.endNode) { // end of the route, dont show next segment button
+            this.logger.log(`Final Segment`, this.fileName);
+            this.logger.emptyStack(this.fileName);
             this.showNext = false;
         }
 
@@ -882,7 +895,10 @@ export class RouteProvider {
 
     }
 
+
     previousSegment() {
+        
+        //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "previousSegment\n", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
         this.rssiArray = [];
         this.didNotificate = false;
         this.didNotificate = false;
@@ -893,6 +909,7 @@ export class RouteProvider {
         this.errorBeacons = previous.errorBeacons;
         this.actualID = previous.actualID;
         this.showNext = true;
+        this.logger.log(`Previous Segment ${this.segmentNumber}, beacon: ${this.actualID}`, this.fileName);
         if (this.actualNode == this.routeGraph.startNode) { // start of the route, dont show previous segment button
             this.showPrev = false;
         }
@@ -924,26 +941,28 @@ export class RouteProvider {
         this.beaconsData = data.beacons;
         // console.log("beaconsData", this.beaconsData);
         data.beacons.map((beacon) => {
+            //this.logger.log(`Ranged - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
             if (this.routeBeacons[this.actualID] != undefined) {
                 //console.log(this.routeBeacons[actualID]);
                 if (beacon.minor == this.routeBeacons[this.actualID].minor &&
                     beacon.major == this.routeBeacons[this.actualID].major && !this.didNotificate) {
-                    console.log(beacon.major,beacon.minor,beacon.rssi);
+                    //console.log(beacon.major, beacon.minor, beacon.rssi);
+                    this.logger.log(`Ranged correct - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
                     this.routeBeacons[this.actualID].rssiArray.push(beacon.rssi);
                 }
             }
         });
 
         this.filterErrorBeacons(data.beacons);
-        if(!this.didNotificateError){
+        if (!this.didNotificateError) {
             this.checkErrorBeacons();
         }
-        
+
         if (!this.didNotificate) {
-            if(this.routeBeacons[this.actualID] != undefined){
+            if (this.routeBeacons[this.actualID] != undefined) {
                 this.checkCorrectBeacon();
             }
-            
+
         }
 
 
@@ -955,8 +974,9 @@ export class RouteProvider {
             for (let index = 0; index < this.errorBeacons.length; index++) {
                 if (beacon.minor == this.errorBeacons[index].minor && beacon.major == this.errorBeacons[index].major && !this.didNotificateError) {
                     this.errorBeacons[index].rssiArray.push(beacon.rssi);
-                    console.log(beacon.major, beacon.minor, beacon.rssi);
-
+                    this.logger.log(`Ranged error - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
+                    //console.log(beacon.major, beacon.minor, beacon.rssi);
+                    
                 }
             }
         });
@@ -969,7 +989,8 @@ export class RouteProvider {
                 //let median = beacon.rssiArray[1];
                 let avg = (beacon.rssiArray[0] + beacon.rssiArray[1]) / 2;
                 if (avg > beacon.rssiTrigger) {
-                    console.log(avg, " > ", beacon.rssiTrigger);
+                    //console.log(avg, " > ", beacon.rssiTrigger);
+                    this.logger.log(`Triggered error -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName);
                     this.vibration.vibrate([100, 100, 100]);
                     this.mobileAccessibility.speak("Jsi na špatné cestě, vrať se zpět na začátek úseku", 1);
                     this.didNotificateError = true;
@@ -987,7 +1008,8 @@ export class RouteProvider {
             //let median = beacon.rssiArray[1];
             let avg = (beacon.rssiArray[0] + beacon.rssiArray[1]) / 2;
             if (avg > beacon.rssiTrigger) {
-                console.log(avg, " > ", beacon.rssiTrigger);
+                //console.log(avg, " > ", beacon.rssiTrigger);
+                this.logger.log(`Triggered correct -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName)
                 this.vibration.vibrate([100, 100, 100]);
                 this.mobileAccessibility.speak("Jsi blízko konce tohoto úseku", 1);
                 this.didNotificate = true;

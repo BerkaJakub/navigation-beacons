@@ -12,30 +12,37 @@ import { RouteProvider } from '../../providers/route-provider';
   templateUrl: 'home.html'
 })
 export class HomePage {
- 
+
   zone: any;
   state: any;
 
-
-  constructor(private change: ChangeDetectorRef, private platform: Platform,  public navParams: NavParams,
+  constructor(private change: ChangeDetectorRef, private platform: Platform, public navParams: NavParams,
     public navCtrl: NavController, public routeProvider: RouteProvider, public events: Events) {
     this.zone = new NgZone({ enableLongStackTrace: false });
-    if(navParams.get("state") != undefined){
+    if (navParams.get("state") != undefined) {
       this.state = navParams.get("state");
-    }else{
+    } else {
       this.state = this.routeProvider.getInitState();
     }
+
+
+    
+
   }
 
   nextSegment() {
+    //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "nextSegment", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
     let state = this.routeProvider.nextSegment();
     this.navCtrl.push(HomePage, {
       state: state
     });
 
+
+
   }
 
   previousSegment() {
+    //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "previousSegment", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
     let state = this.routeProvider.previousSegment();
     this.navCtrl.push(HomePage, {
       state: state
@@ -44,9 +51,9 @@ export class HomePage {
 
   ionViewDidLoad() {
     document.title = this.state.segmentNumber;
-    if(!this.routeProvider.isScanning){
+    if (!this.routeProvider.isScanning) {
       this.routeProvider.startScan();
-    } 
+    }
   }
 
 
