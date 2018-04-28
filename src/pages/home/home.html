@@ -5,7 +5,7 @@
     {{state.actualDescription}}
   </p>
   
-  
+  <button *ngIf="state.showVerifyLocation" ion-button (click)="verifyLocation()">Ověřit polohu</button><br>
   <button *ngIf="state.showNext" ion-button (click)="nextSegment()">Další úsek</button><br>
   <button *ngIf="state.showPrev" ion-button (click)="previousSegment()">Předchozí úsek</button>
 

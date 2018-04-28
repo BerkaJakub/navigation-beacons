@@ -5,7 +5,6 @@ import { BeaconModel } from '../models/beacon-model';
 import { BeaconProvider } from '../providers/beacon-provider';
 
 import { Vibration } from '@ionic-native/vibration';
-import { TextToSpeech } from '@ionic-native/text-to-speech';
 import { MobileAccessibility } from '@ionic-native/mobile-accessibility';
 
 import { LoggerProvider } from '../providers/logger-provider';
@@ -15,7 +14,6 @@ export class RouteProvider {
     beaconsData: BeaconModel[] = [];
     routeGraph: any;
     routeBeacons: object;
-    zone: any;
     state: any;
     activeSegment: any;
     activeSegmentIndex: number;
@@ -27,17 +25,17 @@ export class RouteProvider {
     errorBeacons: Array<any>;
     didNotificate: boolean; // true if we notficated user already
     didNotificateError: boolean;
-    isApproaching: boolean; //
     rssiArray: Array<any>; // to store rssi values of ranged beacon
     showNext: boolean;
     showPrev: boolean;
+    showVerifyLocation: boolean;
     isScanning: boolean;
     segmentNumber: string;
     fileName: string;
 
-    constructor(public beaconProvider: BeaconProvider, public logger: LoggerProvider,  public events: Events, public mobileAccessibility: MobileAccessibility, private platform: Platform, private vibration: Vibration, private tts: TextToSpeech, ) {
+    constructor(public beaconProvider: BeaconProvider, public logger: LoggerProvider, public events: Events, public mobileAccessibility: MobileAccessibility, private platform: Platform, private vibration: Vibration ) {
         this.routeGraph = {
-            routeDescription: "Trasa z adresy Karlovo náměstí 557/30 na adresu Karlovo náměstí 293/13 do místnosti 317 v budově E areálu ČVUT. Trasa je asi 700 metrů dlouhá a vede přes 3 přechody. Součástí trasy je jízda tramvají ze zastávky Štěpánská na zastávku Novoměstská radnice. Postav se tak, ať máš budovy za zády.",
+            routeDescription: "Trasa z adresy Karlovo náměstí 557 lomeno 30 na adresu Karlovo náměstí 293 lomeno 13 do místnosti 317 v budově E areálu ČVUT. Trasa je asi 700 metrů dlouhá a vede přes 3 přechody. Součástí trasy je jízda tramvají ze zastávky Štěpánská na zastávku Novoměstská radnice. Postav se tak, ať máš budovy za zády.",
             startNode: "a",
             endNode: "an",
             "adjacency": { //mapping each node identifier to an array of edge identifiers, each corresponds to an edge going out of the node.
@@ -125,7 +123,7 @@ export class RouteProvider {
                 },
                 "k": {
                     isOnRoute: true,
-                    beaconID: "KfLr"
+                    beaconID: "U4tv"
                 },
                 "l": {
                     isOnRoute: true,
@@ -298,7 +296,7 @@ export class RouteProvider {
                     isOnRoute: true,
                     "data": {
                         segmentNumber: "1. úsek ze 3",
-                        description: "Jsi na adrese Karlovo náměstí 557/30.",
+                        description: "Jsi na adrese Karlovo náměstí 557 lomeno 30.",
                         action: "Otoč se vlevo a jdi asi 120 metrů na kulatý roh s ulicí Ječná. Po levé ruce měj budovy."
                     }
                 },
@@ -326,7 +324,7 @@ export class RouteProvider {
                     "data": {
                         segmentNumber: "1. úsek z 8",
                         description: "Zastávka Novoměstská radnice u chodníku, na zastávce se nachází označník zastávky v přední části zastávky, přístřešek v prostřední části. U druhého okraje chodníku je park.",
-                        action: "Po výstupu z tramvaje dojdi rovně k rozhraní chodníku a zeleně před tebou za sebou měj tramvajový pás."
+                        action: "Po výstupu z tramvaje dojdi rovně k rozhraní chodníku a zeleně před tebou. Za sebou měj tramvajový pás."
                     }
                 },
                 "5": {
@@ -380,7 +378,7 @@ export class RouteProvider {
                     "data": {
                         segmentNumber: "7. úsek z 8",
                         description: "Jsi na kulatém rohu ulic Karlovo náměstí a Odborů.",
-                        action: "Pokračuj vpřed a jdi asi 150 metrů na adresu Karlovo náměstí 293/13. Vstup do budovy je ve druhém výklenku vyčnívající fasády budovy. Po pravé ruce měj budovy."
+                        action: "Pokračuj vpřed a jdi asi 150 metrů na adresu Karlovo náměstí 293 lomeno 13. Vstup do budovy je ve druhém výklenku vyčnívající fasády budovy. Po pravé ruce měj budovy."
                     }
                 },
                 "11": {
@@ -834,15 +832,16 @@ export class RouteProvider {
         console.log("getInitState");
 
         this.fileName = "log" + new Date().toJSON().slice(0, 10) + new Date().toJSON().slice(11, 13) + "-" + new Date().toJSON().slice(14, 16) + ".txt";
-        
+
         this.logger.createFile(this.fileName);
-        
+
         return {
             actualNode: this.routeGraph.startNode,
             actualDescription: this.routeGraph.routeDescription,
             segmentNumber: this.segmentNumber,
             showNext: true,
-            showPrev: false
+            showPrev: false,
+            showVerifyLocation: false
         }
 
     }
@@ -878,6 +877,12 @@ export class RouteProvider {
             }
         });
 
+        if (this.routeBeacons[this.actualID] != undefined) {
+            this.showVerifyLocation = true;
+        } else {
+            this.showVerifyLocation = false;
+        }
+
         if (this.actualNode == this.routeGraph.endNode) { // end of the route, dont show next segment button
             this.logger.log(`Final Segment`, this.fileName);
             this.logger.emptyStack(this.fileName);
@@ -890,6 +895,7 @@ export class RouteProvider {
             segmentNumber: this.segmentNumber,
             showNext: this.showNext,
             showPrev: this.showPrev,
+            showVerifyLocation: this.showVerifyLocation
 
         }
 
@@ -897,8 +903,6 @@ export class RouteProvider {
 
 
     previousSegment() {
-        
-        //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "previousSegment\n", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
         this.rssiArray = [];
         this.didNotificate = false;
         this.didNotificate = false;
@@ -913,16 +917,38 @@ export class RouteProvider {
         if (this.actualNode == this.routeGraph.startNode) { // start of the route, dont show previous segment button
             this.showPrev = false;
         }
+        if (this.routeBeacons[this.actualID] != undefined) {
+            this.showVerifyLocation = true;
+        } else {
+            this.showVerifyLocation = false;
+        }
 
         return { // return state
             actualDescription: this.actualDescription,
             actualNode: this.actualNode,
             segmentNumber: this.segmentNumber,
             showNext: this.showNext,
-            showPrev: this.showPrev
+            showPrev: this.showPrev,
+            showVerifyLocation: this.showVerifyLocation
         }
 
     }
+
+    verifyLocation() {
+        this.logger.log(`Verify Location ${this.segmentNumber}, beacon: ${this.actualID}`, this.fileName);
+        this.didNotificate = false;
+        this.didNotificateError = false;
+        setTimeout(() => {
+            if (!this.didNotificate && !this.didNotificateError) {
+                this.didNotificate = true;
+                this.didNotificateError = true;
+                this.mobileAccessibility.speak("Nepovedlo se ověřit polohu.", 1);
+                this.logger.log(`Verify Location failed`, this.fileName);
+            }
+
+        }, 5000);
+    }
+
 
     startScan() {
         this.platform.ready().then(() => {
@@ -952,8 +978,9 @@ export class RouteProvider {
                 }
             }
         });
-
         this.filterErrorBeacons(data.beacons);
+
+
         if (!this.didNotificateError) {
             this.checkErrorBeacons();
         }
@@ -976,7 +1003,7 @@ export class RouteProvider {
                     this.errorBeacons[index].rssiArray.push(beacon.rssi);
                     this.logger.log(`Ranged error - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
                     //console.log(beacon.major, beacon.minor, beacon.rssi);
-                    
+
                 }
             }
         });
@@ -990,10 +1017,11 @@ export class RouteProvider {
                 let avg = (beacon.rssiArray[0] + beacon.rssiArray[1]) / 2;
                 if (avg > beacon.rssiTrigger) {
                     //console.log(avg, " > ", beacon.rssiTrigger);
-                    this.logger.log(`Triggered error -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName);
-                    this.vibration.vibrate([100, 100, 100]);
-                    this.mobileAccessibility.speak("Jsi na špatné cestě, vrať se zpět na začátek úseku", 1);
                     this.didNotificateError = true;
+                    this.logger.log(`Triggered error -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName);
+                    this.vibration.vibrate([200, 50, 200, 50, 200, 50, 200]);
+                    this.mobileAccessibility.speak("Jsi na špatné cestě, vrať se zpět na začátek úseku", 1);
+                    
                 }
                 beacon.rssiArray = [];
             }
@@ -1009,10 +1037,11 @@ export class RouteProvider {
             let avg = (beacon.rssiArray[0] + beacon.rssiArray[1]) / 2;
             if (avg > beacon.rssiTrigger) {
                 //console.log(avg, " > ", beacon.rssiTrigger);
-                this.logger.log(`Triggered correct -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName)
-                this.vibration.vibrate([100, 100, 100]);
-                this.mobileAccessibility.speak("Jsi blízko konce tohoto úseku", 1);
                 this.didNotificate = true;
+                this.logger.log(`Triggered correct -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName)
+                this.vibration.vibrate([1000, 100, 1000]);
+                this.mobileAccessibility.speak("Jsi blízko konce tohoto úseku", 1);
+                
             }
             this.routeBeacons[this.actualID].rssiArray = [];
         }

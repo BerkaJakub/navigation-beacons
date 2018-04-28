@@ -12,7 +12,6 @@ import { File } from '@ionic-native/file';
 
 import { MyApp } from './app.component';
 import { HomePage } from '../pages/home/home';
-import { NextSegmentPage } from '../pages/next-segment/next-segment';
 
 import { BeaconProvider } from '../providers/beacon-provider';
 import { RouteProvider } from '../providers/route-provider';
@@ -22,8 +21,7 @@ import { LoggerProvider } from '../providers/logger-provider';
 @NgModule({
   declarations: [
     MyApp,
-    HomePage,
-    NextSegmentPage
+    HomePage
   ],
   imports: [
     BrowserModule,
@@ -32,8 +30,7 @@ import { LoggerProvider } from '../providers/logger-provider';
   bootstrap: [IonicApp],
   entryComponents: [
     MyApp,
-    HomePage,
-    NextSegmentPage
+    HomePage
   ],
   providers: [
     StatusBar,

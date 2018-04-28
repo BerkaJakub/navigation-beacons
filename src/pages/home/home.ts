@@ -1,9 +1,7 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component} from '@angular/core';
 import { NavController, Platform, Events, NavParams } from 'ionic-angular';
 import { NgZone } from "@angular/core";
 
-
-import { BeaconProvider } from '../../providers/beacon-provider';
 import { RouteProvider } from '../../providers/route-provider';
 
 
@@ -16,7 +14,7 @@ export class HomePage {
   zone: any;
   state: any;
 
-  constructor(private change: ChangeDetectorRef, private platform: Platform, public navParams: NavParams,
+  constructor(private platform: Platform, public navParams: NavParams,
     public navCtrl: NavController, public routeProvider: RouteProvider, public events: Events) {
     this.zone = new NgZone({ enableLongStackTrace: false });
     if (navParams.get("state") != undefined) {
@@ -31,7 +29,6 @@ export class HomePage {
   }
 
   nextSegment() {
-    //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "nextSegment", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
     let state = this.routeProvider.nextSegment();
     this.navCtrl.push(HomePage, {
       state: state
@@ -42,11 +39,14 @@ export class HomePage {
   }
 
   previousSegment() {
-    //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "previousSegment", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
     let state = this.routeProvider.previousSegment();
     this.navCtrl.push(HomePage, {
       state: state
     });
+  }
+
+  verifyLocation(){
+    this.routeProvider.verifyLocation();
   }
 
   ionViewDidLoad() {
