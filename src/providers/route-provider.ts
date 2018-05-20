@@ -14,10 +14,7 @@ export class RouteProvider {
     beaconsData: BeaconModel[] = [];
     routeGraph: any;
     routeBeacons: object;
-    state: any;
-    activeSegment: any;
-    activeSegmentIndex: number;
-    nextBeacon: object;
+    state: any;    
     actualDescription: string;
     actualNode: any;
     actualID: string;
@@ -827,7 +824,9 @@ export class RouteProvider {
 
 
     }
-
+    /*
+    * Sets application state to the first segment and creates a log file, when the application starts, returns the state
+    */
     getInitState() {
         console.log("getInitState");
 
@@ -846,9 +845,10 @@ export class RouteProvider {
 
     }
 
-
+    /*
+     * Traverse the graph to next node and changes the state accordingly, pushes that state into history stack and returns it 
+     */
     nextSegment() {
-        //this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", this.fileName, "nextSegment\n", { replace: false, append: true }).then(() => console.log("logged")).catch(err => console.log(err));
         this.showNext = true;
         this.showPrev = true;
         this.rssiArray = [];
@@ -862,13 +862,11 @@ export class RouteProvider {
 
         outEdges.forEach(edgeID => {
             var edge = this.routeGraph.edges[edgeID];
-            //console.log(edge);
             if (edge.isOnRoute) {
                 this.actualDescription = edge.data.description + " " + edge.data.action;
                 this.actualNode = edge.to;
                 this.segmentNumber = edge.data.segmentNumber;
                 this.actualID = this.routeGraph.nodes[this.actualNode].beaconID;
-                //console.log(this.actualID);
                 this.logger.log(`Next Segment ${this.segmentNumber}, beacon: ${this.actualID}`, this.fileName);
             } else { // error edge
                 var ID = this.routeGraph.nodes[edge.to].beaconID;
@@ -901,7 +899,9 @@ export class RouteProvider {
 
     }
 
-
+    /**
+     * Pop previous state from the history stack and rewrites the actual state and returns it
+     */
     previousSegment() {
         this.rssiArray = [];
         this.didNotificate = false;
@@ -934,6 +934,9 @@ export class RouteProvider {
 
     }
 
+    /**
+     * Sets the 5 second time-out for ranging the beacons in the actual segment.
+     */
     verifyLocation() {
         this.logger.log(`Verify Location ${this.segmentNumber}, beacon: ${this.actualID}`, this.fileName);
         this.didNotificate = false;
@@ -949,7 +952,9 @@ export class RouteProvider {
         }, 5000);
     }
 
-
+    /**
+     * Starts ranging the beacons in a nearby region
+     */
     startScan() {
         this.platform.ready().then(() => {
             this.beaconProvider.initialise().then((isInitialised) => {
@@ -963,23 +968,13 @@ export class RouteProvider {
 
     }
 
+    /**
+     * called when some beacons are ranged
+     */
     filterBeaconsHandler: any = (data) => {
         this.beaconsData = data.beacons;
-        // console.log("beaconsData", this.beaconsData);
-        data.beacons.map((beacon) => {
-            //this.logger.log(`Ranged - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
-            if (this.routeBeacons[this.actualID] != undefined) {
-                //console.log(this.routeBeacons[actualID]);
-                if (beacon.minor == this.routeBeacons[this.actualID].minor &&
-                    beacon.major == this.routeBeacons[this.actualID].major && !this.didNotificate) {
-                    //console.log(beacon.major, beacon.minor, beacon.rssi);
-                    this.logger.log(`Ranged correct - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
-                    this.routeBeacons[this.actualID].rssiArray.push(beacon.rssi);
-                }
-            }
-        });
+        this.filterCorrectBeacon(data.beacons);
         this.filterErrorBeacons(data.beacons);
-
 
         if (!this.didNotificateError) {
             this.checkErrorBeacons();
@@ -994,7 +989,27 @@ export class RouteProvider {
 
 
     }
-
+    /**
+     * Filter the ranged array of beacons data, if the correct beacon is present then pushes the RSSI value into the RSSI array of this beacon
+     * @param beacons 
+     */
+    filterCorrectBeacon(beacons){
+        beacons.map((beacon) => {
+            if (this.routeBeacons[this.actualID] != undefined) {
+                
+                if (beacon.minor == this.routeBeacons[this.actualID].minor &&
+                    beacon.major == this.routeBeacons[this.actualID].major && !this.didNotificate) {
+                    
+                    this.logger.log(`Ranged correct - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
+                    this.routeBeacons[this.actualID].rssiArray.push(beacon.rssi);
+                }
+            }
+        });
+    }
+    /**
+     * Filter the ranged array of beacons data, if the error beacon is present then pushes the RSSI value into the RSSI array of this beacon
+     * @param beacons 
+     */
     filterErrorBeacons(beacons) {
 
         beacons.map((beacon) => {
@@ -1002,21 +1017,23 @@ export class RouteProvider {
                 if (beacon.minor == this.errorBeacons[index].minor && beacon.major == this.errorBeacons[index].major && !this.didNotificateError) {
                     this.errorBeacons[index].rssiArray.push(beacon.rssi);
                     this.logger.log(`Ranged error - Major: ${beacon.major} Minor: ${beacon.minor} RSSI: ${beacon.rssi}`, this.fileName);
-                    //console.log(beacon.major, beacon.minor, beacon.rssi);
+                    
 
                 }
             }
         });
     }
-
+    /**
+     * Checks the array of RSSI values for each error beacon, 
+     * if the length of the array is 2 then count the average and compare it to the trigger value if average is higher then trigger the notification 
+     */
     checkErrorBeacons() {
         this.errorBeacons.forEach(beacon => {
             if (beacon.rssiArray.length == 2) {
-                //beacon.rssiArray.sort((a, b) => a - b);
-                //let median = beacon.rssiArray[1];
+                
                 let avg = (beacon.rssiArray[0] + beacon.rssiArray[1]) / 2;
                 if (avg > beacon.rssiTrigger) {
-                    //console.log(avg, " > ", beacon.rssiTrigger);
+                    
                     this.didNotificateError = true;
                     this.logger.log(`Triggered error -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName);
                     this.vibration.vibrate([200, 50, 200, 50, 200, 50, 200]);
@@ -1028,15 +1045,18 @@ export class RouteProvider {
         });
     }
 
+    /**
+     * Checks the array of RSSI values of the correct beacon, 
+     * if the length of the array is 2 then count the average and compare it to the trigger value if average is higher then trigger the notification
+     */
     checkCorrectBeacon() {
         let beacon = this.routeBeacons[this.actualID];
-        //console.log("correctBeacon",beacon);
+        
         if (beacon.rssiArray.length == 2) {
-            //beacon.rssiArray.sort((a, b) => a - b);
-            //let median = beacon.rssiArray[1];
+            
             let avg = (beacon.rssiArray[0] + beacon.rssiArray[1]) / 2;
             if (avg > beacon.rssiTrigger) {
-                //console.log(avg, " > ", beacon.rssiTrigger);
+               
                 this.didNotificate = true;
                 this.logger.log(`Triggered correct -  avgRSSI: ${avg}  beacon.rssiTrigger: ${beacon.rssiTrigger}`, this.fileName)
                 this.vibration.vibrate([1000, 100, 1000]);

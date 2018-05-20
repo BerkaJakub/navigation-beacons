@@ -11,12 +11,12 @@ import { RouteProvider } from '../../providers/route-provider';
 })
 export class HomePage {
 
-  zone: any;
+  
   state: any;
 
   constructor(private platform: Platform, public navParams: NavParams,
     public navCtrl: NavController, public routeProvider: RouteProvider, public events: Events) {
-    this.zone = new NgZone({ enableLongStackTrace: false });
+    
     if (navParams.get("state") != undefined) {
       this.state = navParams.get("state");
     } else {

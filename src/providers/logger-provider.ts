@@ -11,6 +11,10 @@ export class LoggerProvider {
         this.msgStack = [];
     }
 
+    /**
+     * Creates file with name in logs directory
+     * @param file name of the file
+     */
     createFile(file) {
         var dirName = "logs";
         let content = "Created log file: " + file + "\n";
@@ -43,11 +47,14 @@ export class LoggerProvider {
 
     }
 
+    /**
+     * Empty stack of messages and writes it to the file
+     */
     emptyStack(file) {
         console.log(this.msgStack);
         const message = this.msgStack.join("");
         this.file.writeFile(this.file.externalApplicationStorageDirectory + "logs", file, message, { replace: false, append: true }).then(() => {
-            //console.log("logged");
+            
         }).catch(err => console.log(err));
 
     }
